@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-site request test</title>
+</head>
+<body>
+    <label for="url">Enter URL:</label>
+    <input type="text" id="url" value="http://localhost:3000" style="width: 300px;"><br /><br />
+    <button onclick="makeGetRequest()">GET Request</button>
+    <button onclick="makePostRequest('/', true)">XHR POST Request with Credentials</button>
+    <button onclick="makePostRequest('/reflected', false)">XHR POST to Insecure Reflected Origin Endpoint</button>
+    <button onclick="openWebSocket()">Open WebSocket</button>
+    <form id="form" enctype="application/x-www-form-urlencoded" method="POST" action="" onsubmit="return changeAction();"><input type="hidden" value="bla" name="bla"><input type="submit" value="Form-based POST"></form>
+    <pre id="response"></pre>
+
+    <script>
+        function changeAction() {
+            document.getElementById("form").action = document.getElementById("url").value;
+            return true;
+        }
+
+        function makeGetRequest() {
+            const url = document.getElementById("url").value;
+            fetch(url)
+                .then(response => response.text())
+                .then(data => document.getElementById("response").textContent = data)
+                .catch(error => document.getElementById("response").textContent = "Error: " + error);
+        }
+
+        function makePostRequest(endpoint, credentials) {
+            const url = document.getElementById("url").value + endpoint;
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", url, true);
+            if (credentials) { xhr.withCredentials = true; }
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    document.getElementById("response").textContent = "Response: " + xhr.responseText;
+                }
+            };
+            xhr.send("Hello");
+        }
+
+        function openWebSocket() {
+            const url = document.getElementById("url").value.replace("http", "ws"); // Convert to WebSocket URL
+            const ws = new WebSocket(url);
+            ws.onopen = () => document.getElementById("response").textContent = "WebSocket Connected";
+            ws.onmessage = event => document.getElementById("response").textContent = "Received: " + event.data;
+            ws.onerror = error => document.getElementById("response").textContent = "WebSocket Error: " + error;
+            ws.onclose = () => document.getElementById("response").textContent = "WebSocket Closed";
+        }
+    </script>
+</body>
+</html>
